@@ -1,9 +1,12 @@
-import { FiNavigation, FiWifi, FiPower } from 'react-icons/fi'
+import { useState } from 'react'
+import { FiNavigation, FiWifi, FiPower, FiMapPin } from 'react-icons/fi'
 import { MdPerson, MdPhoneAndroid, MdUpdate, MdBatteryStd, MdLocationOn, MdPhone, MdPower, MdPowerOff } from 'react-icons/md'
+import MapModal from './MapModal'
 
-const DeviceCard = ({ device, isPhoneOn, getTimeAgo, getTimeColor,getPowerConfidence }) => {
-  // Función para formatear el tiempo transcurrido
- const formatImei = (imei) => {
+const DeviceCard = ({ device, isPhoneOn, getTimeAgo, getTimeColor, getPowerConfidence }) => {
+  const [showMap, setShowMap] = useState(false)
+
+  const formatImei = (imei) => {
     if (!imei) return 'N/A'
     const parts = imei.split('-')
     return parts.length >= 2 ? `${parts[0]}-${parts[1]}` : imei
@@ -51,11 +54,23 @@ const DeviceCard = ({ device, isPhoneOn, getTimeAgo, getTimeColor,getPowerConfid
     }
   }
 
-  const phoneOn = isPhoneOn(device)
-  const confidence = getPowerConfidence(device) // Usa la función pasada como prop
-  const timeAgo = getTimeAgo(device.tracking?.fechacaptura) // Usa la función pasada como prop
-  const timeColor = getTimeColor(device.tracking?.fechacaptura) // Usa la función pasada como prop
+  const handleShowMap = () => {
+    if (device.tracking?.latitud && device.tracking?.longitud) {
+      setShowMap(true)
+    }
+  }
 
+  const location = {
+    latitud: device.tracking?.latitud,
+    longitud: device.tracking?.longitud
+  }
+
+  const hasLocation = device.tracking?.latitud && device.tracking?.longitud
+
+  const phoneOn = isPhoneOn(device)
+  const confidence = getPowerConfidence(device)
+  const timeAgo = getTimeAgo(device.tracking?.fechacaptura)
+  const timeColor = getTimeColor(device.tracking?.fechacaptura)
 
   const styles = {
     card: {
@@ -172,7 +187,6 @@ const DeviceCard = ({ device, isPhoneOn, getTimeAgo, getTimeColor,getPowerConfid
       </div>
 
       <div>
-
         <div style={styles.infoRow}>
           <div style={styles.iconContainer}>
             <MdPerson size={16} />
@@ -205,7 +219,7 @@ const DeviceCard = ({ device, isPhoneOn, getTimeAgo, getTimeColor,getPowerConfid
           </div>
         </div>
 
-        {/* VERSIÓN DE LA APP - AGREGADA */}
+        {/* VERSIÓN DE LA APP */}
         <div style={styles.infoRow}>
           <div style={styles.iconContainer}>
             <MdUpdate size={16} />
@@ -269,9 +283,9 @@ const DeviceCard = ({ device, isPhoneOn, getTimeAgo, getTimeColor,getPowerConfid
               {formatPhoneNumber(device.tracking?.nrotelefono)}
             </p>
           </div>
-          
         </div>
-         {/* Tiempo exacto desde la última actualización */}
+
+        {/* Tiempo exacto desde la última actualización */}
         <div style={styles.infoRow}>
           <div style={styles.iconContainer}>
             <MdUpdate size={16} />
@@ -285,6 +299,32 @@ const DeviceCard = ({ device, isPhoneOn, getTimeAgo, getTimeColor,getPowerConfid
             }}>
               {timeAgo}
             </p>
+            
+            {/* Botón para ver ubicación */}
+             <button 
+            style={{
+              background: hasLocation ? '#3B82F6' : '#6B7280',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: '600',
+              cursor: hasLocation ? 'pointer' : 'not-allowed',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s',
+              marginTop: '12px', // ← Más separación
+              width: 'fit-content'
+            }}
+            onClick={handleShowMap} // ← Usa la función corregida
+            disabled={!hasLocation}
+            title={hasLocation ? "Ver ubicación en el mapa" : "Ubicación no disponible"}
+          >
+            <FiMapPin size={14} />
+            {hasLocation ? "Ver Ubicación en Mapa" : "Ubicación No Disponible"}
+          </button>
           </div>
         </div>
       </div>
@@ -295,6 +335,13 @@ const DeviceCard = ({ device, isPhoneOn, getTimeAgo, getTimeColor,getPowerConfid
           'Sin datos'
         }</span>
       </div>
+
+      {/* Modal del mapa */}
+      <MapModal
+        isOpen={showMap}
+        onClose={() => setShowMap(false)}
+        location={location}
+      />
     </div>
   )
 }
