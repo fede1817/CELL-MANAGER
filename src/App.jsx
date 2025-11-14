@@ -208,12 +208,11 @@ const getPowerConfidence = (device) => {
     .filter(Boolean)
   )].sort()
 
-  useEffect(() => {
-    fetchTrackingData()
-    const interval = setInterval(fetchTrackingData, 30000)
-    return () => clearInterval(interval)
-  }, [])
-
+ useEffect(() => {
+  fetchTrackingData()
+  const interval = setInterval(fetchTrackingData, 24 * 60 * 60 * 1000) // 24 horas
+  return () => clearInterval(interval)
+}, [])
   // Estilos CSS en objeto - MODO OSCURO
   const styles = {
     container: {

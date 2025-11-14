@@ -205,6 +205,17 @@ const DeviceCard = ({ device, isPhoneOn, getTimeAgo, getTimeColor,getPowerConfid
           </div>
         </div>
 
+        {/* VERSIÓN DE LA APP - AGREGADA */}
+        <div style={styles.infoRow}>
+          <div style={styles.iconContainer}>
+            <MdUpdate size={16} />
+          </div>
+          <div style={styles.infoContent}>
+            <p style={styles.label}>VERSIÓN DE LA APP</p>
+            <p style={styles.value}>v{device.tracking?.version || 'N/A'}</p>
+          </div>
+        </div>
+
         <div style={styles.infoRow}>
           <div style={styles.iconContainer}>
             <MdBatteryStd size={16} />
