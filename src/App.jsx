@@ -7,6 +7,7 @@ import Loading from './components/Loading'
 import Error from './components/Error'
 import NoResults from './components/NoResults'
 
+
 function App() {
   const [trackingData, setTrackingData] = useState([])
   const [filteredData, setFilteredData] = useState([])
@@ -15,6 +16,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedSucursal, setSelectedSucursal] = useState('')
   const [selectedPowerStatus, setSelectedPowerStatus] = useState('')
+  const [selectedActiveStatus, setSelectedActiveStatus] = useState('todos') // Nuevo estado para filtrar por activo/inactivo
 
   const fetchTrackingData = async () => {
     try {
@@ -48,98 +50,94 @@ function App() {
     }
   }
 
- // En App.js, actualiza la función getTimeAgo:
-
-// Función para formatear el tiempo transcurrido
-const getTimeAgo = (timestamp) => {
-  if (!timestamp) return 'Sin datos'
-  
-  const now = Date.now()
-  const diff = now - timestamp
-  
-  // Si el timestamp está en el futuro (diff negativo)
-  if (diff < 0) {
-    const futureDiff = Math.abs(diff)
-    const seconds = Math.floor(futureDiff / 1000)
+  // Función para formatear el tiempo transcurrido
+  const getTimeAgo = (timestamp) => {
+    if (!timestamp) return 'Sin datos'
     
-    if (seconds < 60) return `en ${seconds} segundos`
+    const now = Date.now()
+    const diff = now - timestamp
+    
+    // Si el timestamp está en el futuro (diff negativo)
+    if (diff < 0) {
+      const futureDiff = Math.abs(diff)
+      const seconds = Math.floor(futureDiff / 1000)
+      
+      if (seconds < 60) return `en ${seconds} segundos`
+      
+      const minutes = Math.floor(seconds / 60)
+      if (minutes < 60) return `en ${minutes} minuto${minutes > 1 ? 's' : ''}`
+      
+      const hours = Math.floor(minutes / 60)
+      if (hours < 24) return `en ${hours} hora${hours > 1 ? 's' : ''}`
+      
+      return 'en el futuro'
+    }
+    
+    // Timestamp en el pasado (comportamiento normal)
+    const seconds = Math.floor(diff / 1000)
+    if (seconds < 60) return `hace ${seconds} segundos`
     
     const minutes = Math.floor(seconds / 60)
-    if (minutes < 60) return `en ${minutes} minuto${minutes > 1 ? 's' : ''}`
+    if (minutes < 60) return `hace ${minutes} minuto${minutes > 1 ? 's' : ''}`
     
     const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `en ${hours} hora${hours > 1 ? 's' : ''}`
+    if (hours < 24) return `hace ${hours} hora${hours > 1 ? 's' : ''}`
     
-    return 'en el futuro'
+    const days = Math.floor(hours / 24)
+    if (days < 30) return `hace ${days} día${days > 1 ? 's' : ''}`
+    
+    const months = Math.floor(days / 30)
+    if (months < 12) return `hace ${months} mes${months > 1 ? 'es' : ''}`
+    
+    const years = Math.floor(months / 12)
+    return `hace ${years} año${years > 1 ? 's' : ''}`
   }
-  
-  // Timestamp en el pasado (comportamiento normal)
-  const seconds = Math.floor(diff / 1000)
-  if (seconds < 60) return `hace ${seconds} segundos`
-  
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `hace ${minutes} minuto${minutes > 1 ? 's' : ''}`
-  
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `hace ${hours} hora${hours > 1 ? 's' : ''}`
-  
-  const days = Math.floor(hours / 24)
-  if (days < 30) return `hace ${days} día${days > 1 ? 's' : ''}`
-  
-  const months = Math.floor(days / 30)
-  if (months < 12) return `hace ${months} mes${months > 1 ? 'es' : ''}`
-  
-  const years = Math.floor(months / 12)
-  return `hace ${years} año${years > 1 ? 's' : ''}`
-}
 
-
-// Función para obtener el color según la antigüedad
-// Función para obtener el color según la antigüedad
-const getTimeColor = (timestamp) => {
-  if (!timestamp) return '#EF4444'
-  
-  const now = Date.now()
-  const diff = now - timestamp
-  
-  // Si el timestamp está en el futuro, usar color especial
-  if (diff < 0) {
-    return '#8B5CF6' // Color violeta para timestamps futuros
+  // Función para obtener el color según la antigüedad
+  const getTimeColor = (timestamp) => {
+    if (!timestamp) return '#EF4444'
+    
+    const now = Date.now()
+    const diff = now - timestamp
+    
+    // Si el timestamp está en el futuro, usar color especial
+    if (diff < 0) {
+      return '#8B5CF6' // Color violeta para timestamps futuros
+    }
+    
+    // Timestamp en el pasado (comportamiento normal)
+    const hours = Math.floor(diff / (60 * 60 * 1000))
+    
+    if (hours < 1) return '#10B981'
+    if (hours < 6) return '#F59E0B'
+    if (hours < 12) return '#F97316'
+    if (hours < 24) return '#DC2626'
+    return '#DC2626'
   }
-  
-  // Timestamp en el pasado (comportamiento normal)
-  const hours = Math.floor(diff / (60 * 60 * 1000))
-  
-  if (hours < 1) return '#10B981'
-  if (hours < 6) return '#F59E0B'
-  if (hours < 12) return '#F97316'
-  if (hours < 24) return '#DC2626'
-  return '#DC2626'
-}
 
-// Función para determinar el nivel de confianza del estado
-const getPowerConfidence = (device) => {
-  const tracking = device.tracking
-  if (!tracking) return 'sin_datos'
-  
-  const now = Date.now()
-  const isDataRecent = tracking?.fechacaptura && 
-    (now - tracking.fechacaptura) < (24 * 60 * 60 * 1000) &&
-    (now - tracking.fechacaptura) >= 0 // Asegurar que no sea futuro
-  
-  // Si el timestamp está en el futuro, considerar como datos antiguos
-  if (tracking?.fechacaptura && (now - tracking.fechacaptura) < 0) {
-    return 'datos_antiguos'
+  // Función para determinar el nivel de confianza del estado
+  const getPowerConfidence = (device) => {
+    const tracking = device.tracking
+    if (!tracking) return 'sin_datos'
+    
+    const now = Date.now()
+    const isDataRecent = tracking?.fechacaptura && 
+      (now - tracking.fechacaptura) < (24 * 60 * 60 * 1000) &&
+      (now - tracking.fechacaptura) >= 0 // Asegurar que no sea futuro
+    
+    // Si el timestamp está en el futuro, considerar como datos antiguos
+    if (tracking?.fechacaptura && (now - tracking.fechacaptura) < 0) {
+      return 'datos_antiguos'
+    }
+    
+    if (!isDataRecent) return 'datos_antiguos'
+    
+    if (tracking.gpsactivo === true) return 'alta'
+    if (tracking.bateria > 0 && tracking.imei) return 'media'
+    if (tracking.tipored && tracking.bateria !== undefined) return 'baja'
+    
+    return 'insuficiente'
   }
-  
-  if (!isDataRecent) return 'datos_antiguos'
-  
-  if (tracking.gpsactivo === true) return 'alta'
-  if (tracking.bateria > 0 && tracking.imei) return 'media'
-  if (tracking.tipored && tracking.bateria !== undefined) return 'baja'
-  
-  return 'insuficiente'
-}
 
   // Función para determinar si el teléfono está prendido
   const isPhoneOn = (device) => {
@@ -162,6 +160,19 @@ const getPowerConfidence = (device) => {
   // Filtrar dispositivos
   useEffect(() => {
     let filtered = trackingData
+    
+    // Filtro por estado activo/inactivo del usuario
+    if (selectedActiveStatus !== 'todos') {
+      filtered = filtered.filter(device => {
+        const isActive = device.tracking?.usuario?.activo === true
+        
+        if (selectedActiveStatus === 'activo') {
+          return isActive
+        } else { // 'inactivo'
+          return !isActive
+        }
+      })
+    }
     
     if (searchTerm) {
       const batteryMatch = searchTerm.match(/(\d+)%?|bateria\s*(\d+)|carga\s*(\d+)/i)
@@ -200,7 +211,7 @@ const getPowerConfidence = (device) => {
     }
     
     setFilteredData(filtered)
-  }, [searchTerm, selectedSucursal, selectedPowerStatus, trackingData])
+  }, [searchTerm, selectedSucursal, selectedPowerStatus, selectedActiveStatus, trackingData])
 
   // Obtener lista única de sucursales
   const sucursales = [...new Set(trackingData
@@ -208,11 +219,12 @@ const getPowerConfidence = (device) => {
     .filter(Boolean)
   )].sort()
 
- useEffect(() => {
-  fetchTrackingData()
-  const interval = setInterval(fetchTrackingData, 24 * 60 * 60 * 1000) // 24 horas
-  return () => clearInterval(interval)
-}, [])
+  useEffect(() => {
+    fetchTrackingData()
+    const interval = setInterval(fetchTrackingData, 24 * 60 * 60 * 1000) // 24 horas
+    return () => clearInterval(interval)
+  }, [])
+
   // Estilos CSS en objeto - MODO OSCURO
   const styles = {
     container: {
@@ -239,6 +251,44 @@ const getPowerConfidence = (device) => {
     subtitle: {
       color: '#94a3b8',
       marginBottom: '24px'
+    },
+    filterSection: {
+      display: 'flex',
+      justifyContent: 'center',
+      gap: '16px',
+      marginBottom: '24px',
+      flexWrap: 'wrap'
+    },
+    filterGroup: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+      minWidth: '200px'
+    },
+    filterLabel: {
+      fontSize: '14px',
+      fontWeight: '600',
+      color: '#cbd5e1',
+      marginBottom: '4px'
+    },
+    select: {
+      backgroundColor: '#1e293b',
+      border: '1px solid #475569',
+      borderRadius: '8px',
+      padding: '10px 12px',
+      color: '#f1f5f9',
+      fontSize: '14px',
+      cursor: 'pointer',
+      outline: 'none',
+      width: '100%',
+      transition: 'all 0.2s ease',
+      '&:hover': {
+        borderColor: '#64748b'
+      },
+      '&:focus': {
+        borderColor: '#3b82f6',
+        boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.3)'
+      }
     }
   }
 
@@ -263,10 +313,27 @@ const getPowerConfidence = (device) => {
           fetchTrackingData={fetchTrackingData}
         />
 
-       <Stats 
-  filteredData={filteredData}
-  isPhoneOn={isPhoneOn}
-/>
+        {/* Filtro para estado activo/inactivo */}
+        <div style={styles.filterSection}>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Estado del Usuario:</label>
+            <select
+              value={selectedActiveStatus}
+              onChange={(e) => setSelectedActiveStatus(e.target.value)}
+              style={styles.select}
+              disabled={loading}
+            >
+              <option value="todos">Todos los usuarios</option>
+              <option value="activo">Usuarios activos</option>
+              <option value="inactivo">Usuarios inactivos</option>
+            </select>
+          </div>
+        </div>
+
+        <Stats 
+          filteredData={filteredData}
+          isPhoneOn={isPhoneOn}
+        />
       </div>
 
       {loading && filteredData.length === 0 && <Loading />}
@@ -279,13 +346,13 @@ const getPowerConfidence = (device) => {
       )}
 
       {filteredData.length > 0 ? (
-   <DeviceGrid 
-  filteredData={filteredData}
-  isPhoneOn={isPhoneOn}
-  getTimeAgo={getTimeAgo}
-  getTimeColor={getTimeColor}
-  getPowerConfidence={getPowerConfidence}
-/>
+        <DeviceGrid 
+          filteredData={filteredData}
+          isPhoneOn={isPhoneOn}
+          getTimeAgo={getTimeAgo}
+          getTimeColor={getTimeColor}
+          getPowerConfidence={getPowerConfidence}
+        />
       ) : (
         !loading && !error && <NoResults />
       )}
@@ -317,4 +384,4 @@ const getPowerConfidence = (device) => {
   )
 }
 
-export default App
+export default App;
